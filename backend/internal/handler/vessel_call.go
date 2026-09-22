@@ -20,6 +20,7 @@ func (h *VesselCallHandler) Register(group *gin.RouterGroup) {
 	resource := group.Group("/vessels")
 	resource.GET("", h.list)
 	resource.GET("/:id", h.get)
+	resource.GET("/:id/gate", h.berthingGate)
 	resource.POST("", middleware.RequireMinimumRole("operator"), h.create)
 	resource.PUT("/:id", middleware.RequireMinimumRole("operator"), h.update)
 	resource.POST("/:id/transition", middleware.RequireMinimumRole("operator"), h.transition)
@@ -97,6 +98,19 @@ func (h *VesselCallHandler) transition(c *gin.Context) {
 		return
 	}
 	util.OK(c, item)
+}
+
+func (h *VesselCallHandler) berthingGate(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	result, err := h.service.BerthingGate(c.Request.Context(), id)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	util.OK(c, result)
 }
 
 func (h *VesselCallHandler) remove(c *gin.Context) {

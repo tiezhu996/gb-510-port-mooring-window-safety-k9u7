@@ -2,6 +2,34 @@ package dto
 
 import "time"
 
+// BerthingGateCheck is one rule evaluated by the berthing release gate. The
+// frontend renders every check so operators can see why a release is blocked.
+type BerthingGateCheck struct {
+	Code    string `json:"code"`
+	Label   string `json:"label"`
+	Passed  bool   `json:"passed"`
+	Message string `json:"message"`
+}
+
+// BerthingGateResult is the read model returned by the berthing release gate.
+// It is recomputed from live data on every request, so the vessel page can
+// reload it at any time and after a browser refresh.
+type BerthingGateResult struct {
+	VesselID      uint                `json:"vesselId"`
+	VesselCode    string              `json:"vesselCode"`
+	Berth         string              `json:"berth"`
+	FromStatus    string              `json:"fromStatus"`
+	TargetStatus  string              `json:"targetStatus"`
+	Required      bool                `json:"required"`
+	Allowed       bool                `json:"allowed"`
+	ClearanceCode string              `json:"clearanceCode,omitempty"`
+	WindowCode    string              `json:"windowCode,omitempty"`
+	WindowVersion uint                `json:"windowVersion,omitempty"`
+	Checks        []BerthingGateCheck `json:"checks"`
+	Blockers      []string            `json:"blockers"`
+	EvaluatedAt   time.Time           `json:"evaluatedAt"`
+}
+
 // CreateVesselCall is the public write contract for 船舶靠泊. Status is deliberately
 // omitted so callers cannot bypass the service state machine.
 type CreateVesselCall struct {

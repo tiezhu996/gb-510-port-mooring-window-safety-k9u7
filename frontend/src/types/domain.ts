@@ -25,7 +25,13 @@ export interface DomainRecord {
 }
 
 export interface PageMeta { page: number; pageSize: number; total: number }
-export interface ApiEnvelope<T> { data: T; error?: string; message?: string; meta?: PageMeta }
+export interface ApiEnvelope<T> { data: T; error?: string; message?: string; details?: unknown; meta?: PageMeta }
+export interface BerthingGateCheck { code: string; label: string; passed: boolean; message: string }
+export interface BerthingGateResult {
+  vesselId: number; vesselCode: string; berth: string; fromStatus: string; targetStatus: string;
+  required: boolean; allowed: boolean; clearanceCode?: string; windowCode?: string; windowVersion?: number;
+  checks: BerthingGateCheck[]; blockers: string[]; evaluatedAt: string;
+}
 export interface UserSession { token: string; username: string; displayName: string; role: string; expiresIn: number }
 export interface AuditLog {
   id: number; requestId: string; actor: string; action: string; entityType: string;

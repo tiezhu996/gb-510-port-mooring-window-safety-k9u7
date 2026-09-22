@@ -18,17 +18,19 @@ type VesselCallService interface {
 	Create(context.Context, dto.CreateVesselCall, string, string) (model.VesselCall, error)
 	Update(context.Context, uint, dto.UpdateVesselCall, string, string) (model.VesselCall, error)
 	Transition(context.Context, uint, dto.TransitionRequest, string, string) (model.VesselCall, error)
+	BerthingGate(context.Context, uint) (dto.BerthingGateResult, error)
 	Delete(context.Context, uint, string, string) error
 	StatusCounts(context.Context) (map[string]int64, error)
 }
 
 type vesselCallService struct {
 	repository repository.VesselCallRepository
+	gate       repository.BerthingGateRepository
 	security   SecurityService
 }
 
-func NewVesselCallService(repo repository.VesselCallRepository, security SecurityService) VesselCallService {
-	return &vesselCallService{repository: repo, security: security}
+func NewVesselCallService(repo repository.VesselCallRepository, gate repository.BerthingGateRepository, security SecurityService) VesselCallService {
+	return &vesselCallService{repository: repo, gate: gate, security: security}
 }
 
 func (s *vesselCallService) List(ctx context.Context, query dto.PageQuery) (repository.Page[model.VesselCall], error) {
@@ -97,6 +99,10 @@ func (s *vesselCallService) Transition(ctx context.Context, id uint, input dto.T
 	target := strings.TrimSpace(input.Status)
 	if !constants.CanTransition(constants.VesselCallTransitions, current.Status, target) {
 		return model.VesselCall{}, fmt.Errorf("%w: %s -> %s", ErrInvalidTransition, current.Status, target)
+	}
+	if target == string(constants.CallStateMoored) &&
+		(current.Status == string(constants.CallStatePlanned) || current.Status == string(constants.CallStateApproach)) {
+		return s.releaseToMoored(ctx, current, input, actor, requestID)
 	}
 	before := current.Status
 	current.Status = target

@@ -12,11 +12,14 @@ import (
 )
 
 func handleError(c *gin.Context, err error) {
+	var gateBlocked *service.GateBlockedError
 	switch {
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		util.Fail(c, http.StatusNotFound, "not_found", "record was not found")
 	case errors.Is(err, repository.ErrVersionConflict):
 		util.Fail(c, http.StatusConflict, "version_conflict", "record changed; refresh and retry")
+	case errors.As(err, &gateBlocked):
+		util.FailWithDetails(c, http.StatusUnprocessableEntity, "berthing_gate_blocked", gateBlocked.Error(), gateBlocked.Result)
 	case errors.Is(err, service.ErrInvalidTransition), errors.Is(err, service.ErrInvalidInput),
 		errors.Is(err, service.ErrSelfApproval), errors.Is(err, service.ErrReviewerRequired),
 		errors.Is(err, service.ErrWindowVersion):

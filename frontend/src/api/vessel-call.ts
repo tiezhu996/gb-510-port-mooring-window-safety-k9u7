@@ -1,6 +1,6 @@
 
 import { request } from './client';
-import type { DomainRecord } from '../types/domain';
+import type { BerthingGateResult, DomainRecord } from '../types/domain';
 
 export async function listVesselCall(page = 1, pageSize = 20, search = '') {
   return request<DomainRecord[]>(`/vessels?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(search)}`);
@@ -12,4 +12,7 @@ export async function transitionVesselCall(id: number, status: string, expectedV
   return request<DomainRecord>(`/vessels/${id}/transition`, {
     method: 'POST', body: JSON.stringify({ status, expectedVersion, reason }),
   });
+}
+export async function loadBerthingGate(id: number) {
+  return request<BerthingGateResult>(`/vessels/${id}/gate`);
 }

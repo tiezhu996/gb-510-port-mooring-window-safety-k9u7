@@ -10,6 +10,7 @@ type Envelope struct {
 	Data    any    `json:"data,omitempty"`
 	Error   string `json:"error,omitempty"`
 	Message string `json:"message,omitempty"`
+	Details any    `json:"details,omitempty"`
 	Meta    any    `json:"meta,omitempty"`
 }
 
@@ -27,6 +28,12 @@ func NoContent(c *gin.Context) {
 
 func Fail(c *gin.Context, status int, code, message string) {
 	c.AbortWithStatusJSON(status, Envelope{Error: code, Message: message})
+}
+
+// FailWithDetails attaches a structured payload (for example the berthing
+// gate evaluation) so clients can render blocking items without re-querying.
+func FailWithDetails(c *gin.Context, status int, code, message string, details any) {
+	c.AbortWithStatusJSON(status, Envelope{Error: code, Message: message, Details: details})
 }
 
 func Page(c *gin.Context, data any, page, pageSize int, total int64) {
