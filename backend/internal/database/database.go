@@ -81,6 +81,7 @@ func migrate(db *gorm.DB) error {
 		&model.MooringPlan{},
 		&model.WeatherWindow{},
 		&model.SafetyClearance{},
+		&model.BerthingGateCheck{},
 	)
 }
 
@@ -217,9 +218,9 @@ func seedSafetyClearance(ctx context.Context, db *gorm.DB) error {
 			WindowVersion: 1, SubmittedBy: "operator", SubmittedAt: timePointer(now.Add(-15 * time.Minute))},
 
 		{BaseModel: model.BaseModel{Code: "SC-002", Name: "安全许可示例二", Status: "cleared", Version: 1,
-			Description: "用于启动验证和主要流程演示的安全许可记录"}, Facility: "港口系泊安全窗口评估区域2", Owner: "质量复核组",
+			Description: "用于启动验证和主要流程演示的安全许可记录（已放行且已生效，靠泊放行闸门可通过）"}, Facility: "港口系泊安全窗口评估区域2", Owner: "质量复核组",
 			Category: "重点", RiskLevel: "medium", MetricValue: 25.0, MetricUnit: "%",
-			EffectiveAt: now.Add(3 * time.Hour), Evidence: "已完成基础证据核对", RelatedCode: "WW-002",
+			EffectiveAt: now.Add(-30 * time.Minute), Evidence: "已完成基础证据核对", RelatedCode: "WW-002",
 			WindowVersion: 1, SubmittedBy: "operator", SubmittedAt: timePointer(now.Add(-45 * time.Minute)), ConfirmedBy: "reviewer", ConfirmedAt: timePointer(now.Add(-30 * time.Minute))},
 
 		{BaseModel: model.BaseModel{Code: "SC-003", Name: "安全许可示例三", Status: "restricted", Version: 1,

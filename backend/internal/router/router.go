@@ -32,11 +32,16 @@ func New(cfg config.Config, db *gorm.DB, redisClient *redis.Client, logger *slog
 	mooringPlanRepository := repository.NewMooringPlanRepository(db)
 	weatherWindowRepository := repository.NewWeatherWindowRepository(db)
 	safetyClearanceRepository := repository.NewSafetyClearanceRepository(db)
-	vesselCallService := service.NewVesselCallService(vesselCallRepository, securityService)
+	berthingGateRepository := repository.NewBerthingGateRepository(db)
+	berthingGateService := service.NewBerthingGateService(
+		vesselCallRepository, safetyClearanceRepository, weatherWindowRepository,
+		berthingGateRepository,
+	)
+	vesselCallService := service.NewVesselCallService(vesselCallRepository, securityService, berthingGateService)
 	mooringPlanService := service.NewMooringPlanService(mooringPlanRepository, securityService)
 	weatherWindowService := service.NewWeatherWindowService(weatherWindowRepository, securityService)
 	safetyClearanceService := service.NewSafetyClearanceService(safetyClearanceRepository, securityService)
-	vesselCallHandler := handler.NewVesselCallHandler(vesselCallService)
+	vesselCallHandler := handler.NewVesselCallHandler(vesselCallService, berthingGateService)
 	mooringPlanHandler := handler.NewMooringPlanHandler(mooringPlanService)
 	weatherWindowHandler := handler.NewWeatherWindowHandler(weatherWindowService)
 	safetyClearanceHandler := handler.NewSafetyClearanceHandler(safetyClearanceService)

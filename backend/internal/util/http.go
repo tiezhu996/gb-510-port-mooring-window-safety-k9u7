@@ -29,6 +29,12 @@ func Fail(c *gin.Context, status int, code, message string) {
 	c.AbortWithStatusJSON(status, Envelope{Error: code, Message: message})
 }
 
+// FailDetailed returns an error envelope that still carries structured data
+// (used by the berthing gate to return the blocker list alongside the failure).
+func FailDetailed(c *gin.Context, status int, code, message string, data any) {
+	c.AbortWithStatusJSON(status, Envelope{Data: data, Error: code, Message: message})
+}
+
 func Page(c *gin.Context, data any, page, pageSize int, total int64) {
 	c.JSON(http.StatusOK, Envelope{
 		Data: data,

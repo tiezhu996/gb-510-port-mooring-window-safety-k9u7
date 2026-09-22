@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"strings"
 
 	"github.com/blueship581/port-mooring-window-safety/backend/internal/dto"
 	"github.com/blueship581/port-mooring-window-safety/backend/internal/model"
@@ -12,6 +13,7 @@ import (
 type SafetyClearanceRepository interface {
 	List(context.Context, dto.PageQuery) (Page[model.SafetyClearance], error)
 	Get(context.Context, uint) (model.SafetyClearance, error)
+	ListByFacility(context.Context, string) ([]model.SafetyClearance, error)
 	Create(context.Context, *model.SafetyClearance) error
 	Update(context.Context, uint, uint, *model.SafetyClearance) error
 	Delete(context.Context, uint) error
@@ -31,6 +33,13 @@ func (r *safetyClearanceRepository) List(ctx context.Context, q dto.PageQuery) (
 }
 func (r *safetyClearanceRepository) Get(ctx context.Context, id uint) (model.SafetyClearance, error) {
 	return r.store.Get(ctx, id)
+}
+func (r *safetyClearanceRepository) ListByFacility(ctx context.Context, facility string) ([]model.SafetyClearance, error) {
+	items := make([]model.SafetyClearance, 0)
+	err := r.store.db.WithContext(ctx).
+		Where("facility = ?", strings.TrimSpace(facility)).
+		Order("updated_at DESC, id DESC").Find(&items).Error
+	return items, err
 }
 func (r *safetyClearanceRepository) Create(ctx context.Context, item *model.SafetyClearance) error {
 	return r.store.Create(ctx, item)

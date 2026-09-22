@@ -33,6 +33,7 @@ docker compose down -v --remove-orphans
 
 - JWT 登录和 viewer/operator/reviewer/admin 四级 RBAC；后端写路由中间件、前端路由守卫与按钮权限保持一致。
 - 所有状态变化使用乐观锁并写入不可覆盖的审计日志。
+- **靠泊放行闸门**：靠泊任务推进到 `moored` 前必须通过强制关卡——同一泊位下存在已放行(`cleared`)且已生效(`effectiveAt <= now`)的安全许可，且其固化的风浪窗口版本当前仍处于 `safe`。核对与状态推进在单条原子条件更新内完成：窗口/许可在推进期间变化、重复或并发推进只成功一次；失败保持任务原状态、不改动许可/窗口/业务审计，仅追加一条闸门留痕并返回结构化阻断项（`BerthingGateCheck`），靠泊页可刷新回读。离泊与许可双人复核流程不变。
 - 安全许可采用真实双人确认：operator 首次提交后仍保持 `pending`，不同账号的 reviewer/admin 才能放行；提交人不能自审。
 - `ClearancePanel` 在风浪窗口和许可页共用，固化窗口版本、首次提交人及复核人；许可审计显式保存窗口版本、操作者和请求 ID。
 - `RiskBadge` 在系泊方案和风浪窗口页共用，统一呈现风险等级与状态。
@@ -140,6 +141,14 @@ token=$(curl -sS -X POST http://127.0.0.1:19510/api/auth/login \
 curl -sS http://127.0.0.1:19510/api/overview \
   -H "Authorization: Bearer $token"
 ```
+
+### 靠泊放行闸门
+
+- `GET /api/vessels/:id/gate-check`：实时预检（只读、不落库），返回是否可放行及阻断项。
+- `GET /api/vessels/gate-checks/latest`：每个靠泊任务最近一次已落库的闸门结果，刷新后可回读。
+- `POST /api/vessels/:id/transition`（`status=moored`）：闸门通过才推进；失败返回 `422 {"error":"berthing_gate_blocked"}`，`data.blockers` 为结构化阻断项，任务/许可/窗口均不变。
+
+阻断项 `code` 取值：`no_clearance`、`no_cleared_clearance`、`clearance_not_effective`、`window_missing`、`window_not_safe`、`window_version_mismatch`、`already_moored`（重复/并发落败）、`gate_race`（版本过期或推进期间条件变化）。
 
 ## License
 

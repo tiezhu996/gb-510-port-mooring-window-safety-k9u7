@@ -25,10 +25,11 @@ type VesselCallService interface {
 type vesselCallService struct {
 	repository repository.VesselCallRepository
 	security   SecurityService
+	gate       BerthingGateService
 }
 
-func NewVesselCallService(repo repository.VesselCallRepository, security SecurityService) VesselCallService {
-	return &vesselCallService{repository: repo, security: security}
+func NewVesselCallService(repo repository.VesselCallRepository, security SecurityService, gate BerthingGateService) VesselCallService {
+	return &vesselCallService{repository: repo, security: security, gate: gate}
 }
 
 func (s *vesselCallService) List(ctx context.Context, query dto.PageQuery) (repository.Page[model.VesselCall], error) {
@@ -97,6 +98,11 @@ func (s *vesselCallService) Transition(ctx context.Context, id uint, input dto.T
 	target := strings.TrimSpace(input.Status)
 	if !constants.CanTransition(constants.VesselCallTransitions, current.Status, target) {
 		return model.VesselCall{}, fmt.Errorf("%w: %s -> %s", ErrInvalidTransition, current.Status, target)
+	}
+	// 靠泊放行闸门：推进到“已系泊”必须通过同泊位已放行生效许可与安全窗口版本核对，
+	// 检查与状态推进在单次原子条件更新内完成（离泊等其它迁移保持原逻辑不变）。
+	if target == string(constants.CallStateMoored) {
+		return s.gate.ReleaseWithGate(ctx, current, input, actor, requestID)
 	}
 	before := current.Status
 	current.Status = target
